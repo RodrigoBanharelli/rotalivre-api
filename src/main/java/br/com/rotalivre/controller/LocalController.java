@@ -86,6 +86,15 @@ public class LocalController {
         return ResponseEntity.noContent().build();
     }
 
+    //GET /locais/{id}/relatos - 200 OK ou 404 (relatos do local, 1:N)
+    @GetMapping("/{id}/relatos")
+    public List<RelatoResponseDto> listarRelatos(@PathVariable int id)
+            throws SQLException, EntidadeNaoEncontradaException {
+        dao.pesquisarPorId(id); //404 se o local nao existir
+        return relatoDao.listarPorLocal(id).stream().map(
+                relato -> mapper.map(relato, RelatoResponseDto.class)).toList();
+    }
+
     //POST /locais/{id}/relatos - 201 Created, 400, 404 ou 409 (regra: 1 relato por usuario, por local, por dia)
     @PostMapping("/{id}/relatos")
     public ResponseEntity<RelatoResponseDto> relatar(@PathVariable int id, @Valid @RequestBody RelatoRequestDto dto,

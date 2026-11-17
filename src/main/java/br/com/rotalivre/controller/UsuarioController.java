@@ -1,6 +1,8 @@
 package br.com.rotalivre.controller;
 
+import br.com.rotalivre.dao.RelatoDao;
 import br.com.rotalivre.dao.UsuarioDao;
+import br.com.rotalivre.dto.RelatoResponseDto;
 import br.com.rotalivre.dto.UsuarioRequestDto;
 import br.com.rotalivre.dto.UsuarioResponseDto;
 import br.com.rotalivre.exception.EntidadeNaoEncontradaException;
@@ -17,17 +19,28 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 
-//Endpoints REST de usuario.
+//Endpoints REST de usuario e dos relatos de cada usuario (1:N).
 @RestController
 @RequestMapping("usuarios")
 public class UsuarioController {
 
     private final UsuarioDao dao;
+    private final RelatoDao relatoDao;
     private final ModelMapper mapper;
 
-    public UsuarioController(UsuarioDao dao, ModelMapper mapper) {
+    public UsuarioController(UsuarioDao dao, RelatoDao relatoDao, ModelMapper mapper) {
         this.dao = dao;
+        this.relatoDao = relatoDao;
         this.mapper = mapper;
+    }
+
+    //GET /usuarios/{id}/relatos - 200 OK ou 404 (relatos do usuario, 1:N)
+    @GetMapping("/{id}/relatos")
+    public List<RelatoResponseDto> listarRelatos(@PathVariable int id)
+            throws SQLException, EntidadeNaoEncontradaException {
+        dao.pesquisarPorId(id); //404 se o usuario nao existir
+        return relatoDao.listarPorUsuario(id).stream().map(
+                relato -> mapper.map(relato, RelatoResponseDto.class)).toList();
     }
 
     //POST /usuarios - 201 Created + Location
