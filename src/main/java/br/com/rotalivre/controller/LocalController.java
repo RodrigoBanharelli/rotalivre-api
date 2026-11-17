@@ -1,10 +1,17 @@
 package br.com.rotalivre.controller;
 
 import br.com.rotalivre.dao.LocalAcessivelDao;
+import br.com.rotalivre.dao.RelatoDao;
+import br.com.rotalivre.dao.UsuarioDao;
 import br.com.rotalivre.dto.LocalRequestDto;
 import br.com.rotalivre.dto.LocalResponseDto;
+import br.com.rotalivre.dto.RelatoRequestDto;
+import br.com.rotalivre.dto.RelatoResponseDto;
 import br.com.rotalivre.exception.EntidadeNaoEncontradaException;
+import br.com.rotalivre.exception.RegraNegocioException;
 import br.com.rotalivre.model.LocalAcessivel;
+import br.com.rotalivre.model.Relato;
+import br.com.rotalivre.model.Usuario;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -16,16 +23,20 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 
-//Endpoints REST de local acessivel.
+//Endpoints REST de local acessivel e dos relatos de cada local (1:N).
 @RestController
 @RequestMapping("locais")
 public class LocalController {
 
     private final LocalAcessivelDao dao;
+    private final RelatoDao relatoDao;
+    private final UsuarioDao usuarioDao;
     private final ModelMapper mapper;
 
-    public LocalController(LocalAcessivelDao dao, ModelMapper mapper) {
+    public LocalController(LocalAcessivelDao dao, RelatoDao relatoDao, UsuarioDao usuarioDao, ModelMapper mapper) {
         this.dao = dao;
+        this.relatoDao = relatoDao;
+        this.usuarioDao = usuarioDao;
         this.mapper = mapper;
     }
 
@@ -73,5 +84,25 @@ public class LocalController {
             throws SQLException, EntidadeNaoEncontradaException {
         dao.remover(id);
         return ResponseEntity.noContent().build();
+    }
+
+    //POST /locais/{id}/relatos - 201 Created, 400, 404 ou 409 (regra: 1 relato por usuario, por local, por dia)
+    @PostMapping("/{id}/relatos")
+    public ResponseEntity<RelatoResponseDto> relatar(@PathVariable int id, @Valid @RequestBody RelatoRequestDto dto,
+                                                     UriComponentsBuilder builder)
+            throws SQLException, EntidadeNaoEncontradaException, RegraNegocioException {
+        dao.pesquisarPorId(id); //404 se o local nao existir
+        Usuario usuario = usuarioDao.pesquisarPorEmail(dto.getEmailUsuario()); //404 se o e-mail nao existir
+
+        //Regra de negocio: o mesmo usuario nao relata o mesmo local duas vezes no mesmo dia
+        if (relatoDao.existeRelatoHoje(usuario.getCodigo(), id))
+            throw new RegraNegocioException("Voce ja relatou este local hoje. Tente novamente amanha");
+
+        Relato relato = new Relato(0, id, usuario.getCodigo(), dto.getSituacao(), dto.getObservacao(), null);
+        relatoDao.cadastrar(relato);
+        relato = relatoDao.pesquisarPorId(relato.getCodigo()); //busca de novo para trazer a data gravada
+
+        URI uri = builder.path("/relatos/{id}").buildAndExpand(relato.getCodigo()).toUri();
+        return ResponseEntity.created(uri).body(mapper.map(relato, RelatoResponseDto.class));
     }
 }

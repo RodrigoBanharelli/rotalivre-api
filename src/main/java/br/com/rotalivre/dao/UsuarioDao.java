@@ -22,6 +22,7 @@ public class UsuarioDao {
             " values (sq_tb_usuario.nextval, ?, ?, ?, ?)";
     private static final String SELECT_SQL = "select * from tb_usuario order by cd_usuario";
     private static final String SELECT_BY_ID_SQL = "select * from tb_usuario where cd_usuario = ?";
+    private static final String SELECT_BY_EMAIL_SQL = "select * from tb_usuario where lower(ds_email) = lower(?)";
     private static final String UPDATE_SQL = "update tb_usuario set nm_usuario = ?, ds_email = ?, " +
             " ds_perfil_mobilidade = ? where cd_usuario = ?";
     private static final String DELETE_SQL = "delete from tb_usuario where cd_usuario = ?";
@@ -70,6 +71,18 @@ public class UsuarioDao {
             ResultSet resultSet = stmt.executeQuery();
             if (!resultSet.next())
                 throw new EntidadeNaoEncontradaException("Usuario nao encontrado");
+            return getUsuario(resultSet);
+        }
+    }
+
+    //Usado no relato: sem login, o usuario e encontrado pelo e-mail.
+    public Usuario pesquisarPorEmail(String email) throws SQLException, EntidadeNaoEncontradaException {
+        try (Connection conexao = dataSource.getConnection();
+             PreparedStatement stmt = conexao.prepareStatement(SELECT_BY_EMAIL_SQL)) {
+            stmt.setString(1, email);
+            ResultSet resultSet = stmt.executeQuery();
+            if (!resultSet.next())
+                throw new EntidadeNaoEncontradaException("Usuario nao encontrado. Cadastre-se em /usuarios");
             return getUsuario(resultSet);
         }
     }
