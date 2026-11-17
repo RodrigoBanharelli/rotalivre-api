@@ -71,11 +71,11 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroResponseDto("Erro 409", e.getMessage()));
     }
 
-    //409 - o banco barrou: registro com filhos (FK) ou valor repetido (UNIQUE)
+    //409 - o banco barrou: registro com filhos, codigo relacionado inexistente (FK) ou valor repetido (UNIQUE)
     @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
     public ResponseEntity<ErroResponseDto> integridade(SQLIntegrityConstraintViolationException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroResponseDto("Erro 409",
-                "Operacao nao permitida: o registro possui relatos vinculados ou valor repetido"));
+                "Operacao nao permitida: registro com vinculos, codigo relacionado inexistente ou valor repetido"));
     }
 
     //500 - falha no banco. Mensagem generica: o SQL nunca vai para o cliente.
