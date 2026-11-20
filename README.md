@@ -16,7 +16,7 @@ Global Solution 2026/2 CitizenTech — Domain Driven Design Using Java — FIAP 
 ## Links
 
 - API no Render: https://rotalivre-gs.onrender.com (ex.: https://rotalivre-gs.onrender.com/locais)
-- Vídeo: https://www.youtube.com/watch?v=yzXtVatgRvM
+- Vídeo: https://youtu.be/dCKFwULuO4w
 
 ## Como rodar
 
